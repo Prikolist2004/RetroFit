@@ -1,10 +1,11 @@
 package com.example.retrofitlesson
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.retrofitlesson.retrofit.ProductApi
+import com.example.retrofitlesson.databinding.ActivityMainBinding
+import com.example.retrofitlesson.retrofit.AuthRequest
+import com.example.retrofitlesson.retrofit.MainApi
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,11 +15,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
+    lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        val tv = findViewById<TextView>(R.id.tv)
-        val b = findViewById<Button>(R.id.button)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val interceptor = HttpLoggingInterceptor()
         interceptor.level = HttpLoggingInterceptor.Level.BODY
@@ -27,16 +29,24 @@ class MainActivity : AppCompatActivity() {
         val retrofit = Retrofit.Builder()
             .baseUrl("https://dummyjson.com").client(client)
             .addConverterFactory(GsonConverterFactory.create()).build()
-        val productApi = retrofit.create(ProductApi::class.java)
+        val mainApi = retrofit.create(MainApi::class.java)
 
-        b.setOnClickListener{
+        binding.button.setOnClickListener{
             CoroutineScope(Dispatchers.IO).launch{
-                val product = productApi.getProductById(2)
+                val user = mainApi.auth(
+                    AuthRequest(
+                        binding.username.text.toString(),
+                        binding.password.text.toString()
+                    )
+                )
                 runOnUiThread{
-                    tv.text = product.title
+                    binding.apply {
+                        Picasso.get().load(user.image).into(iv)
+                        firstName.text = user.firstName
+                        lastName.text = user.lastName
+                    }
                 }
             }
         }
-
     }
 }
